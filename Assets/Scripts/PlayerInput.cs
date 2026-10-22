@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerInput : MonoBehaviour
 {
+
     // Diğer scriptlerin okuyabileceği public değişkenler
     public Vector2 MoveInput { get; private set; }
     public Vector2 LookInput { get; private set; }
@@ -10,7 +11,14 @@ public class PlayerInput : MonoBehaviour
 
     private InputAction moveAction;
     private InputAction lookAction;
+    public bool IsAiming { get; private set; }
 
+    public bool IsShooting { get; private set; }
+    public bool IsReloading { get; private set; }
+
+    private InputAction shootAction;
+    private InputAction reloadAction;
+    private InputAction aimAction;
     void Awake()
     {
         // Hareket (Klavye ve Joystick Sol Analog)
@@ -29,18 +37,31 @@ public class PlayerInput : MonoBehaviour
         lookAction = new InputAction("Look");
         lookAction.AddBinding("<Pointer>/delta");
         lookAction.AddBinding("<Gamepad>/rightStick");
+        shootAction = new InputAction("Shoot", binding: "<Mouse>/leftButton");
+        shootAction.AddBinding("<Gamepad>/rightTrigger");
+
+        reloadAction = new InputAction("Reload", binding: "<Keyboard>/r");
+        reloadAction.AddBinding("<Gamepad>/buttonWest"); // Xbox X, PS Kare
+        aimAction = new InputAction("Aim", binding: "<Mouse>/rightButton");
+        aimAction.AddBinding("<Gamepad>/buttonEast"); // Xbox Y, PS Triangel
     }
 
     void OnEnable()
     {
         moveAction.Enable();
         lookAction.Enable();
+        shootAction.Enable();
+        reloadAction.Enable();
+        aimAction.Enable();
     }
 
     void OnDisable()
     {
         moveAction.Disable();
         lookAction.Disable();
+        shootAction.Disable();
+        reloadAction.Disable();
+        aimAction.Disable();
     }
 
     void Update()
@@ -53,5 +74,8 @@ public class PlayerInput : MonoBehaviour
         {
             IsGamepad = lookAction.activeControl.device is Gamepad;
         }
+        IsShooting = shootAction.IsPressed(); // Basılı tutulduğu sürece True
+        IsAiming = aimAction.IsPressed();
+        IsReloading = reloadAction.WasPressedThisFrame(); // Sadece basıldığı an True
     }
 }
