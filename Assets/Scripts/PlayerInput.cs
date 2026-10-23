@@ -1,81 +1,88 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Central input reader. Other gameplay components read these values instead
+/// of creating their own competing InputActions.
+/// </summary>
 public class PlayerInput : MonoBehaviour
 {
-
-    // Diğer scriptlerin okuyabileceği public değişkenler
     public Vector2 MoveInput { get; private set; }
     public Vector2 LookInput { get; private set; }
     public bool IsGamepad { get; private set; }
+    public bool IsAiming { get; private set; }
+    public bool IsShooting { get; private set; }
+    public bool IsReloading { get; private set; }
+    public bool IsSprinting { get; private set; }
 
     private InputAction moveAction;
     private InputAction lookAction;
-    public bool IsAiming { get; private set; }
-
-    public bool IsShooting { get; private set; }
-    public bool IsReloading { get; private set; }
-
     private InputAction shootAction;
     private InputAction reloadAction;
     private InputAction aimAction;
-    void Awake()
+    private InputAction sprintAction;
+
+    private void Awake()
     {
-        // Hareket (Klavye ve Joystick Sol Analog)
-        moveAction = new InputAction("Move");
+        moveAction = new InputAction("Move", InputActionType.Value);
         moveAction.AddCompositeBinding("2DVector")
             .With("Up", "<Keyboard>/w")
             .With("Down", "<Keyboard>/s")
             .With("Left", "<Keyboard>/a")
-            .With("Right", "<Keyboard>/d")
-            .With("Up", "<Gamepad>/leftStick/up")
-            .With("Down", "<Gamepad>/leftStick/down")
-            .With("Left", "<Gamepad>/leftStick/left")
-            .With("Right", "<Gamepad>/leftStick/right");
+            .With("Right", "<Keyboard>/d");
+        moveAction.AddBinding("<Gamepad>/leftStick");
 
-        // Bakış (Fare ve Joystick Sağ Analog)
-        lookAction = new InputAction("Look");
-        lookAction.AddBinding("<Pointer>/delta");
+        lookAction = new InputAction("Look", InputActionType.Value);
+        lookAction.AddBinding("<Mouse>/delta");
         lookAction.AddBinding("<Gamepad>/rightStick");
-        shootAction = new InputAction("Shoot", binding: "<Mouse>/leftButton");
+
+        shootAction = new InputAction("Shoot", InputActionType.Button, "<Mouse>/leftButton");
         shootAction.AddBinding("<Gamepad>/rightTrigger");
 
-        reloadAction = new InputAction("Reload", binding: "<Keyboard>/r");
-        reloadAction.AddBinding("<Gamepad>/buttonWest"); // Xbox X, PS Kare
-        aimAction = new InputAction("Aim", binding: "<Mouse>/rightButton");
-        aimAction.AddBinding("<Gamepad>/buttonEast"); // Xbox Y, PS Triangel
+        reloadAction = new InputAction("Reload", InputActionType.Button, "<Keyboard>/r");
+        reloadAction.AddBinding("<Gamepad>/buttonWest");
+
+        aimAction = new InputAction("Aim", InputActionType.Button, "<Mouse>/rightButton");
+        aimAction.AddBinding("<Gamepad>/buttonEast");
+
+        sprintAction = new InputAction("Sprint", InputActionType.Button, "<Keyboard>/leftShift");
+        sprintAction.AddBinding("<Gamepad>/leftStickPress");
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
-        moveAction.Enable();
-        lookAction.Enable();
-        shootAction.Enable();
-        reloadAction.Enable();
-        aimAction.Enable();
+        moveAction?.Enable();
+        lookAction?.Enable();
+        shootAction?.Enable();
+        reloadAction?.Enable();
+        aimAction?.Enable();
+        sprintAction?.Enable();
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
-        moveAction.Disable();
-        lookAction.Disable();
-        shootAction.Disable();
-        reloadAction.Disable();
-        aimAction.Disable();
+        moveAction?.Disable();
+        lookAction?.Disable();
+        shootAction?.Disable();
+        reloadAction?.Disable();
+        aimAction?.Disable();
+        sprintAction?.Disable();
     }
 
-    void Update()
+    private void Update()
     {
-        MoveInput = moveAction.ReadValue<Vector2>();
+        if (moveAction == null || lookAction == null)
+            return;
+
+        MoveInput = Vector2.ClampMagnitude(moveAction.ReadValue<Vector2>(), 1f);
         LookInput = lookAction.ReadValue<Vector2>();
 
-        // Güncel kontrol cihazının Gamepad olup olmadığını tespit et
         if (lookAction.activeControl != null)
-        {
             IsGamepad = lookAction.activeControl.device is Gamepad;
-        }
-        IsShooting = shootAction.IsPressed(); // Basılı tutulduğu sürece True
-        IsAiming = aimAction.IsPressed();
-        IsReloading = reloadAction.WasPressedThisFrame(); // Sadece basıldığı an True
+
+        IsShooting = shootAction != null && shootAction.IsPressed();
+        IsAiming = aimAction != null && aimAction.IsPressed();
+        IsReloading = reloadAction != null && reloadAction.WasPressedThisFrame();
+        IsSprinting = sprintAction != null && sprintAction.IsPressed();
     }
 }
