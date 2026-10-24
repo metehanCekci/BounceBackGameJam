@@ -1,66 +1,54 @@
 using UnityEngine;
 
-/// <summary>
-/// Optional secondary camera motion. Attach to a child pivot under the pitch pivot,
-/// NOT the same Transform which has PlayerCamera. Put the actual camera below it.
-/// </summary>
 public class CameraMotion : MonoBehaviour
 {
     public PlayerInput playerInput;
     public Rigidbody playerRb;
 
-    [Header("Walk Bob")]
-    public float bobSpeed = 11f;
-    public float bobAmount = 0.035f;
-    public float bobReturnSpeed = 8f;
+    [Header("Yürüme Sarsıntısı (Headbob)")]
+    public float bobSpeed = 12f; // Adım atma hızı
+    public float bobAmount = 0.06f; // Sarsıntı şiddeti
+    private float defaultYPos = 0;
+    private float timer = 0;
 
-    [Header("Strafe Tilt")]
-    public float tiltAngle = 2f;
-    public float tiltSmooth = 7f;
-
-    private Vector3 defaultLocalPosition;
-    private Vector3 currentBobOffset;
-    private float timer;
+    [Header("Yana Yatma (Strafe Tilt)")]
+    public float tiltAngle = 2.5f; // A ve D tuşlarına basınca kameranın yatma açısı
+    public float tiltSmooth = 6f;
     private float currentTilt;
 
-    private void Awake()
+    void Start()
     {
-        defaultLocalPosition = transform.localPosition;
+        defaultYPos = transform.localPosition.y;
     }
 
-    private void LateUpdate()
+    void Update()
     {
-        if (playerInput == null)
-            return;
+        if (playerInput == null || playerRb == null) return;
 
-        float planarSpeed = 0f;
-        if (playerRb != null)
+        // 1. Kafa Sarsıntısı Matematiği (Artık fiziki hıza değil, tuşlara basmaya duyarlı)
+        float inputMagnitude = playerInput.MoveInput.magnitude;
+        Vector3 newPos = transform.localPosition;
+
+        // Eğer oyuncu yürüme tuşlarına/joystick'e basıyorsa sarsıntıyı başlat
+        if (inputMagnitude > 0.1f)
         {
-#if UNITY_6000_0_OR_NEWER
-            Vector3 velocity = playerRb.linearVelocity;
-#else
-            Vector3 velocity = playerRb.velocity;
-#endif
-            planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
+            timer += Time.deltaTime * bobSpeed;
+            newPos.y = defaultYPos + Mathf.Sin(timer) * bobAmount;
+            newPos.x = Mathf.Cos(timer / 2) * (bobAmount * 0.5f);
         }
-
-        Vector3 bobTarget = Vector3.zero;
-        if (planarSpeed > 0.15f)
+        else
         {
-            timer += Time.deltaTime * bobSpeed * Mathf.Clamp(planarSpeed / 5.5f, 0.5f, 1.5f);
-            bobTarget.y = Mathf.Sin(timer) * bobAmount;
-            bobTarget.x = Mathf.Cos(timer * 0.5f) * bobAmount * 0.45f;
+            // Olduğu yerde duruyor veya sadece etrafa bakıyorsa (Fare/Sağ Analog) merkeze dön
+            timer = 0;
+            newPos.y = Mathf.Lerp(newPos.y, defaultYPos, Time.deltaTime * 5f);
+            newPos.x = Mathf.Lerp(newPos.x, 0f, Time.deltaTime * 5f);
         }
+        transform.localPosition = newPos;
 
-        float bobBlend = 1f - Mathf.Exp(-bobReturnSpeed * Time.deltaTime);
-        currentBobOffset = Vector3.Lerp(currentBobOffset, bobTarget, bobBlend);
-        transform.localPosition = defaultLocalPosition + currentBobOffset;
-
+        // 2. Yana Yatma Matematiği (Strafe Tilt)
         float targetTilt = -playerInput.MoveInput.x * tiltAngle;
-        float tiltBlend = 1f - Mathf.Exp(-tiltSmooth * Time.deltaTime);
-        currentTilt = Mathf.LerpAngle(currentTilt, targetTilt, tiltBlend);
+        currentTilt = Mathf.Lerp(currentTilt, targetTilt, Time.deltaTime * tiltSmooth);
 
-        // This component owns only the child pivot's roll; PlayerCamera owns pitch/yaw.
-        transform.localRotation = Quaternion.Euler(0f, 0f, currentTilt);
+        transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles.x, transform.localRotation.eulerAngles.y, currentTilt);
     }
 }

@@ -3,137 +3,111 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("References")]
+    [Header("Referanslar")]
     public PlayerInput playerInput;
 
-    [Header("Movement Speeds")]
-    public float moveSpeed = 5.5f;
-    public float sprintSpeed = 7.5f;
-    [Range(0.1f, 1f)] public float aimingMoveMultiplier = 0.62f;
-    [Range(0.1f, 1f)] public float firingMoveMultiplier = 0.72f;
-    [Range(0f, 1f)] public float airControlMultiplier = 0.3f;
-
-    [Header("Weight / Acceleration")]
-    public float groundAcceleration = 18f;
-    public float groundDeceleration = 24f;
-    public float airAcceleration = 5f;
-    public float gravity = 24f;
-
-    [Header("Ground / Slope")]
-    [Range(1f, 89f)] public float maxSlopeAngle = 55f;
-    [Min(0.5f)] public float playerHeight = 2f;
-    public Vector3 groundBoxHalfExtents = new Vector3(0.35f, 0.05f, 0.35f);
-    public float groundCheckExtraDistance = 0.15f;
-    public LayerMask groundMask = ~0;
+    [Header("Hareket Ayarları")]
+    public float moveSpeed = 6f;
+    public float maxSlopeAngle = 55f; // Bazen 45 derece sınırda kalır, biraz daha artırdık.
+    public float playerHeight = 2f; 
 
     private Rigidbody rb;
-    private RaycastHit groundHit;
+    private RaycastHit slopeHit;
     private bool isGrounded;
 
-    private void Awake()
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
-        rb.useGravity = false; // Custom gravity is applied in FixedUpdate.
+        rb.useGravity = false; // Kendi yerçekimimizi yazıyoruz
     }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
-        if (playerInput == null)
-            return;
+        if (playerInput == null) return;
 
         CheckGround();
         MovePlayer();
     }
 
-    private void CheckGround()
+    private bool OnSlope()
     {
-        float castDistance = Mathf.Max(0.05f, playerHeight * 0.5f - groundBoxHalfExtents.y + groundCheckExtraDistance);
-        isGrounded = Physics.BoxCast(
-            transform.position,
-            groundBoxHalfExtents,
-            Vector3.down,
-            out groundHit,
-            transform.rotation,
-            castDistance,
-            groundMask,
-            QueryTriggerInteraction.Ignore
-        );
-
         if (isGrounded)
         {
-            float slopeAngle = Vector3.Angle(Vector3.up, groundHit.normal);
-            isGrounded = slopeAngle <= maxSlopeAngle;
+            float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
+            return angle < maxSlopeAngle && angle != 0;
+        }
+        return false;
+    }
+
+    private Vector3 GetSlopeMoveDirection(Vector3 direction)
+    {
+        // Yön vektörünü yokuşun eğimine sıfıra sıfır paralel hale getirir.
+        return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
+    }
+
+    private void CheckGround()
+    {
+        // ÇÖZÜM: Kapsülün altını yuvarlak bir topla değil, düz bir plaka (kutu) ile tarıyoruz.
+        // Bu "Sanal Düz Ayak", karakterin köşelerden kayıp düşmesini engeller.
+        Vector3 boxHalfExtents = new Vector3(0.35f, 0.05f, 0.35f); // Kapsülün (0.5 çap) içine sığan düz taban
+        float castDistance = (playerHeight * 0.5f) - boxHalfExtents.y + 0.15f;
+
+        // BoxCast ile yeri tarıyoruz
+        if (Physics.BoxCast(transform.position, boxHalfExtents, Vector3.down, out slopeHit, transform.rotation, castDistance))
+        {
+            float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
+            
+            // Yokuş açısı uygunsa
+            if (angle < maxSlopeAngle)
+            {
+                isGrounded = true;
+            }
+            else
+            {
+                // Açı çok dikse (Duvar vb.)
+                isGrounded = false;
+            }
+        }
+        else
+        {
+            // Altı tamamen boşsa
+            isGrounded = false;
         }
     }
 
     private void MovePlayer()
     {
-        Vector2 input = Vector2.ClampMagnitude(playerInput.MoveInput, 1f);
-        Vector3 moveDirection = transform.forward * input.y + transform.right * input.x;
-        moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
+        Vector3 moveDirection = transform.forward * playerInput.MoveInput.y + transform.right * playerInput.MoveInput.x;
 
-        bool wantsSprint = playerInput.IsSprinting && !playerInput.IsAiming && !playerInput.IsShooting;
-        float targetSpeed = wantsSprint ? sprintSpeed : moveSpeed;
-
-        // Handling a weapon or aiming reduces acceleration and top speed.
-        if (playerInput.IsAiming)
-            targetSpeed *= aimingMoveMultiplier;
-        if (playerInput.IsShooting)
-            targetSpeed *= firingMoveMultiplier;
-
-        Vector3 velocity = GetVelocity();
-        Vector3 currentHorizontal = new Vector3(velocity.x, 0f, velocity.z);
-        Vector3 desiredDirection = moveDirection;
-        float acceleration = input.sqrMagnitude > 0.001f ? groundAcceleration : groundDeceleration;
-
+        // EĞER GEÇERLİ BİR ZEMİNDEYSEK (Düz veya çıkılabilir yokuş)
         if (isGrounded)
         {
-            bool onSlope = Vector3.Angle(Vector3.up, groundHit.normal) > 0.5f;
-            Vector3 desiredVelocity;
-
-            if (onSlope && moveDirection.sqrMagnitude > 0.001f)
-                desiredVelocity = Vector3.ProjectOnPlane(moveDirection, groundHit.normal).normalized * targetSpeed;
+            float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
+            
+            if (angle > 0)
+            {
+                // Yokuş Yukarı/Aşağı Hareket
+                rb.linearVelocity = GetSlopeMoveDirection(moveDirection) * moveSpeed;
+            }
             else
-                desiredVelocity = desiredDirection * targetSpeed;
+            {
+                // Tam Düz Zemin Hareketi
+                rb.linearVelocity = new Vector3(moveDirection.x * moveSpeed, 0f, moveDirection.z * moveSpeed);
+            }
 
-            Vector3 desiredHorizontal = new Vector3(desiredVelocity.x, 0f, desiredVelocity.z);
-            currentHorizontal = Vector3.MoveTowards(currentHorizontal, desiredHorizontal, acceleration * Time.fixedDeltaTime);
-            velocity.x = currentHorizontal.x;
-            velocity.z = currentHorizontal.z;
-
-            if (onSlope && moveDirection.sqrMagnitude > 0.001f)
-                velocity.y = Mathf.MoveTowards(velocity.y, desiredVelocity.y, acceleration * Time.fixedDeltaTime);
-            else
-                velocity.y = 0f;
+            // Hareketi kesince yokuşta/düzlükte anında durması için
+            if (playerInput.MoveInput.magnitude == 0)
+            {
+                rb.linearVelocity = Vector3.zero;
+            }
         }
+        // EĞER HAVADAYSAK VEYA ÇOK DİK BİR KENARA SÜRTÜNÜYORSAK (Düşüş/Kayma)
         else
         {
-            Vector3 desiredAirVelocity = moveDirection * targetSpeed * airControlMultiplier;
-            currentHorizontal = Vector3.MoveTowards(currentHorizontal, desiredAirVelocity, airAcceleration * Time.fixedDeltaTime);
-            velocity.x = currentHorizontal.x;
-            velocity.z = currentHorizontal.z;
-            velocity.y -= gravity * Time.fixedDeltaTime;
+            // Y eksenine (aşağı doğru) sürekli artan bir yerçekimi uyguluyoruz.
+            // Bu sayede duvara doğru "W" tuşuna bassa bile sürtünemeden aşağı kayıp düşecek.
+            rb.linearVelocity = new Vector3(moveDirection.x * moveSpeed, rb.linearVelocity.y - (9.81f * Time.fixedDeltaTime * 2.5f), moveDirection.z * moveSpeed);
         }
-
-        SetVelocity(velocity);
-    }
-
-    private Vector3 GetVelocity()
-    {
-#if UNITY_6000_0_OR_NEWER
-        return rb.linearVelocity;
-#else
-        return rb.velocity;
-#endif
-    }
-
-    private void SetVelocity(Vector3 value)
-    {
-#if UNITY_6000_0_OR_NEWER
-        rb.linearVelocity = value;
-#else
-        rb.velocity = value;
-#endif
     }
 }

@@ -162,16 +162,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 28120049}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df9e442ac80780e92ad3c1d33272c020, type: 3}
+  m_Script: {fileID: 11500000, guid: 41ff6668893717bda97d5b04577823b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraMotion
-  playerInput: {fileID: 1593271899}
+  playerInput: {fileID: 1593271898}
   playerRb: {fileID: 1593271893}
-  bobSpeed: 11
-  bobAmount: 0.035
-  bobReturnSpeed: 8
-  tiltAngle: 2
-  tiltSmooth: 7
+  bobSpeed: 12
+  bobAmount: 0.06
+  tiltAngle: 2.5
+  tiltSmooth: 6
 --- !u!1 &31052355
 GameObject:
   m_ObjectHideFlags: 0
@@ -1499,26 +1498,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1593271892}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a38a97a2c287016dca9415dd310c7ef1, type: 3}
+  m_Script: {fileID: 11500000, guid: a1a8be2bee18d1f60bc742d4d6a40eb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  playerInput: {fileID: 1593271899}
-  moveSpeed: 5.5
-  sprintSpeed: 7.5
-  aimingMoveMultiplier: 0.62
-  firingMoveMultiplier: 0.72
-  airControlMultiplier: 0.3
-  groundAcceleration: 18
-  groundDeceleration: 24
-  airAcceleration: 5
-  gravity: 24
-  maxSlopeAngle: 55
-  playerHeight: 2
-  groundBoxHalfExtents: {x: 0.35, y: 0.05, z: 0.35}
-  groundCheckExtraDistance: 0.15
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 1
 --- !u!114 &1593271899
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1528,9 +1510,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1593271892}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3c2862b91885d053a9738013fe7389d, type: 3}
+  m_Script: {fileID: 11500000, guid: 2084dda47628f0739a59403dc7dae731, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  playerInput: {fileID: 1593271898}
+  moveSpeed: 6
+  maxSlopeAngle: 55
+  playerHeight: 2
 --- !u!136 &1593271900
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1576,14 +1562,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9900827e749a778a0b3fc69e97f65acb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponController
-  playerInput: {fileID: 1593271899}
+  playerInput: {fileID: 0}
   playerRb: {fileID: 1593271893}
-  cameraController: {fileID: 1868984974}
+  cameraRecoil: {fileID: 0}
   muzzlePoint: {fileID: 967355110}
   playerCamera: {fileID: 1823688467}
   fireRate: 0.15
   maxAmmo: 12
-  reloadDuration: 1.5
   damage: 25
   range: 100
   shootLayer:
@@ -1591,14 +1576,9 @@ MonoBehaviour:
     m_Bits: 55
   bulletPrefab: {fileID: 145812832938974352, guid: 3c7cd3c566814692d8a81a063e439692, type: 3}
   bulletSpeed: 250
-  tracerSpawnOffset: 0.05
+  adsTracerOffset: 0.5
   hitEffectPrefab: {fileID: 0}
   bulletHoleDecal: {fileID: 1036001780994014714, guid: c358932cc1196b23eabf7922e7fb7cbc, type: 3}
-  weaponAudioSource: {fileID: 0}
-  shotClip: {fileID: 0}
-  reloadClip: {fileID: 0}
-  shotVolume: 1
-  reloadVolume: 0.8
   hipPosition: {x: -0.42, y: 0.32, z: -0.34}
   hipRotationOffset: {x: 4.5, y: 0.3, z: 0.7}
   adsPosition: {x: 0, y: 0.55, z: -0.83}
@@ -1610,15 +1590,8 @@ MonoBehaviour:
   wallCheckDistance: 0.6
   wallCheckRadius: 0.15
   wallBlockRotation: {x: -65, y: -20, z: 0}
-  mouseSwayDegreesPerPixel: 0.32
-  maxLookSwayAngle: 15
-  gamepadSwayAngle: 3
-  swayFollowSpeed: 16
-  adsSwayMultiplier: 0.25
-  movementPitchSway: 2
-  movementYawSway: 2.5
-  movementRollSway: 4
-  movementPositionSway: {x: 0.025, y: 0.02}
+  swayAmount: 15
+  maxSwayAngle: 45
   walkBobAmount: 0.015
   breathingSpeed: 2
   hipBreathingAmount: 0.005
@@ -1629,18 +1602,78 @@ MonoBehaviour:
   kickRotateY: 3
   returnSpeed: 10
   snapiness: 25
-  climbPerShot: 2.5
-  cameraRecoilAmount: 1.5
-  cameraHorizontalRecoil: 0.2
   muzzleFlash: {fileID: 897704682}
   barrelSmoke: {fileID: 822794878}
   muzzleLight: {fileID: 1655476585}
   flashLightIntensity: 80000
-  muzzleLightDuration: 0.05
   shellPrefab: {fileID: 2260986744371916545, guid: 11c5fbd050bceec2a8554f13fc50612b, type: 3}
   ejectionPort: {fileID: 504942977}
   shellEjectionForce: 3
   ammoText: {fileID: 2085793074}
+  playerCameraTransform: {fileID: 0}
+  cameraRecoilAmount: 1.5
+--- !u!114 &1757384921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757384919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fda44d90fa932fa3a4605212ab0fcc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponController
+  playerInput: {fileID: 1593271898}
+  playerRb: {fileID: 1593271893}
+  cameraRecoil: {fileID: 0}
+  muzzlePoint: {fileID: 0}
+  playerCamera: {fileID: 0}
+  fireRate: 0.15
+  maxAmmo: 12
+  damage: 25
+  range: 100
+  shootLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  bulletPrefab: {fileID: 0}
+  bulletSpeed: 250
+  adsTracerOffset: 0.5
+  hitEffectPrefab: {fileID: 0}
+  bulletHoleDecal: {fileID: 0}
+  hipPosition: {x: 0, y: 0, z: 0}
+  hipRotationOffset: {x: 0, y: 0, z: 0}
+  adsPosition: {x: 0, y: 0, z: 0}
+  adsRotation: {x: 0, y: 0, z: 0}
+  aimSpeed: 15
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  wallCheckDistance: 0.6
+  wallCheckRadius: 0.15
+  wallBlockRotation: {x: -65, y: -20, z: 0}
+  swayAmount: 15
+  maxSwayAngle: 45
+  walkBobAmount: 0.015
+  breathingSpeed: 2
+  hipBreathingAmount: 0.005
+  adsBreathingAmount: 0.001
+  kickBackZ: -0.1
+  kickUpY: 0.05
+  kickRotateX: -5
+  kickRotateY: 3
+  returnSpeed: 10
+  snapiness: 25
+  muzzleFlash: {fileID: 0}
+  barrelSmoke: {fileID: 0}
+  muzzleLight: {fileID: 0}
+  flashLightIntensity: 80000
+  shellPrefab: {fileID: 0}
+  ejectionPort: {fileID: 0}
+  shellEjectionForce: 3
+  ammoText: {fileID: 0}
+  playerCameraTransform: {fileID: 0}
+  cameraRecoilAmount: 1.5
 --- !u!1 &1823688464
 GameObject:
   m_ObjectHideFlags: 0
@@ -2139,14 +2172,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1868984972}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cf790d748dc33c7d8588348c0ca9a48, type: 3}
+  m_Script: {fileID: 11500000, guid: 555c4f769babbc808833e5d0c618f32a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCamera
-  playerInput: {fileID: 1593271899}
+  playerInput: {fileID: 1593271898}
   playerBody: {fileID: 1593271897}
   mouseSensitivity: 0.25
-  gamepadLookSpeed: 180
   maxPitch: 75
+  recoilRecoverySpeed: 12
+  maxRecoilPitch: 20
 --- !u!1 &1987136516
 GameObject:
   m_ObjectHideFlags: 0
@@ -2407,20 +2441,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 2028771629}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9d228782f1a3da57a47cf684ae6aa5e, type: 3}
+  m_Script: {fileID: 11500000, guid: d90ed55d981cf8e69ae211b6d93e2829, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicCrosshair
   muzzlePoint: {fileID: 967355110}
   mainCamera: {fileID: 1823688466}
   crosshairUI: {fileID: 691187730}
-  playerInput: {fileID: 0}
-  weaponController: {fileID: 0}
+  playerInput: {fileID: 1593271898}
   maxDistance: 100
   hitLayer:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
   canvasGroup: {fileID: 2028771634}
-  crosshairMoveSpeed: 45
 --- !u!1 &2061991553
 GameObject:
   m_ObjectHideFlags: 0
@@ -2830,6 +2862,9 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6776014134929307360, guid: 1dfed6952482aa68c9060d60976af900, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1757384921}
     - targetCorrespondingSourceObject: {fileID: 6776014134929307360, guid: 1dfed6952482aa68c9060d60976af900, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1757384920}
